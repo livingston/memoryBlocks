@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<!--
+      __         __   ___      ___   __
+     |  |       |  |  \  \    /  /  |  |
+     |  |       |  |   \  \  /  /   |  |
+     |  |____   |  |    \  \/  /    |  |
+     |_______|  |__|     \____/     |__|
+        HAND CODED BY LIVINGSTON SAMUEL
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Memory Blocks</title>
+    <link href='http://fonts.googleapis.com/css?family=Arvo' rel='stylesheet' type='text/css'>
+    <style>
+      html, body, div, h3 { margin:0; padding:0 }
+      html, body { height:100%; overflow:hidden }
+      body { z-index:10; position:relative }
+      #board { margin:10px; border:1px solid #eee; overflow:hidden }
+      h3 { font-family: 'Arvo', arial, serif; font-size:24px; text-align:center; margin:10px 0 }
+    </style>
+    <meta name="author" content="Livingston Samuel" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  </head>
+  <body>
+    <h3>Memory Block</h3>
+    <div id='board'></div>
+    <!-- fork me at https://github.com/livingston/ -->
+    <script>
+      (function ( window, document, Math ) {
+        var body = document.body,
+            root = document.getElementById( 'board' ),
+            boardElem = document.createElement( 'canvas' ),
+            MemoryBlocks, Extend;
+
+        if ( !boardElem ) {
+          body.appendChild( document.createTextNode( 'Your browser doesn\'t support canvas.' ) );
+          return
+        }
+
+        boardElem.width = body.clientWidth;
+        boardElem.height = ( body.clientHeight - root.offsetTop - 30 );
+        root.appendChild( boardElem );
+
+        Extend = function ( what, wit ) {
+          var ext = {}, name, t;
+
+          for ( name in wit ) {
+            t = wit[ name ];
+            if ( wit.hasOwnProperty( name ) ) {
+              ext[ name ] = t;
+            }
+          }
+
+          for ( name in what ) {
+            t = what[ name ];
+            if ( what.hasOwnProperty( name ) ) {
+              u = ext[ name ];
+              ext[ name ] = ( typeof u != 'undefined' ) ? u : t;
+            }
+          }
+
+          return ext
+        };
+
+        MemoryBlocks = function (options) {
+          var defaults = {
+            board: null,
+            timeout: 60,
+            minLevel: 0,
+            maxLevel: 0
+          },
+          options = Extend(defaults, options);
+
+          this.context = options.board.getContext('2d');
+          this.options = options;
+        };
+
+        this.mb = new MemoryBlocks({ board: boardElem });
+      }(window, document, Math));
+    </script>
+  </body>
+</html>
