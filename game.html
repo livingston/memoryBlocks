@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2e
+          @version 0.2f
       */
 
       (function ( window, document, Math ) {
@@ -236,18 +236,19 @@
           this.addControls();
 
           var x = 0, y = 0, m = metrics.col, o = metrics.row, n,
-              blocks = {}, i = 0;
+              blocks = {}, i = 0, ty, sizeFactor = metrics.sizeFactor;
 
           while ( o-- ) {
             n = m;
             x = 0;
+            ty = ( y / size ).toFixed( 0 );
             while ( n-- ) {
               this.drawBlock( x, y );
-              blocks['' + ( x / size ).toFixed( 0 ) + ( y / size ).toFixed( 0 )] = [ x, y ];
+              blocks['' + ( x / size ).toFixed( 0 ) + ty] = [ x, y ];
 
-              x = x + metrics.sizeFactor;
+              x = x + sizeFactor;
             }
-            y = y + metrics.sizeFactor;
+            y = y + sizeFactor;
           }
           this.blocks = blocks;
         };
@@ -288,6 +289,7 @@
               oX = board.offsetLeft,
               oY = board.offsetTop,
               controls = this.controls,
+              sizeFactor = self.metrics.sizeFactor,
               handleClick = function ( e ) {
                 e = e || event;
                 var x = e.clientX - oX,
@@ -296,11 +298,11 @@
                 if ( typeof self.possibleClicks == 'undefined' ) {
                   return;
                 } else if ( self.possibleClicks-- ) {
-                  var sX = Math.abs( Math.floor( x / ( size + ( size / 50 ) ) ) ),
-                      sY = Math.abs( Math.floor( y / ( size + ( size / 50 ) ) ) ),
+                  var sX = Math.abs( Math.floor( x / sizeFactor ) ),
+                      sY = Math.abs( Math.floor( y / sizeFactor ) ),
                       xy = '' + sX + sY,
                       coord = self.blocks[ xy ];
-                  if ( coord && self.active.indexOf( xy ) != -1 ) {
+                  if ( self.active.indexOf( xy ) != -1 ) {
                     self.drawBlock( coord[0], coord[1], 'select' );
 
                     if ( self.possibleClicks == 0 ) {
@@ -332,12 +334,13 @@
               opt = this.options,
               metrics = this.metrics,
               col = metrics.col,
-              row = metrics.row, r;
+              row = metrics.row, r, tc;
 
           while ( col-- ) {
             r = row;
+            tc = col + '';
             while ( r-- ) {
-              coord = block[ col + '' + r ];
+              coord = block[ tc + r ];
 
               this.drawBlock( coord[0], coord[1] );
             }
