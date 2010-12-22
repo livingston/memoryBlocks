@@ -87,8 +87,7 @@
           var styles = document.createElement( 'style' ),
               canvas = this.context.canvas;
 
-          styles.innerHTML = '#MB_BOARD { padding:1px 0 0 1px; border:1px solid #c7c7c7 } ' +
-                             '#MB_status { padding:14px 0 13px; text-align:center; position:absolute; top:' +
+          styles.innerHTML = '#MB_status { padding:14px 0 13px; text-align:center; position:absolute; top:' +
                              ( canvas.offsetTop + ( canvas.height - this.options.blockSize ) / 2 ) +
                              'px; width:100%; font-size:24px; line-height:1em; border:0 solid; border-width:3px 0 } ' +
                              '#MB_status.info { background:#eee; color:#999 } ' +
@@ -226,7 +225,6 @@
 
           board.width = metrics.width;
           board.height = metrics.height;
-          board.id = 'MB_BOARD';
 
           opts.root.appendChild( board );
 
