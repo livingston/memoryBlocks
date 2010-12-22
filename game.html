@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2
+          @version 0.2b
       */
 
       (function ( window, document, Math ) {
@@ -84,19 +84,79 @@
           this.setup();
         };
 
+        MemoryBlocks.prototype.loadStyles = function () {
+          var styles = document.createElement( 'style' ),
+              canvas = this.context.canvas;
+
+          styles.innerHTML = '#MB_status { padding:14px 0 13px; text-align:center; position:absolute; top:' +
+                             ( canvas.offsetTop + ( canvas.height - this.options.blockSize ) / 2 ) +
+                             'px; width:100%; font-size:24px; line-height:1em; border:0 solid; border-width:3px 0 } ' +
+                             '#MB_status.info { background:#eee; color:#999 } ' +
+                             '#MB_status.gamecomplete { background:#9dd09d; color:#007300 } ' +
+                             '#MB_status.gameover { background:#fe381e; color:#8f2011 } ' +
+                             '.mb_hidden { display:none } ' +
+                             '#MB_SPRITES { position:absolute; top:0; right:0; display:none }' +
+                             '#MB_CONTROLS button { padding:10px 20px 8px; border:1px solid; border-radius:10px; font-size:16px; margin:7px; font-weight:bold; text-transform:uppercase }' +
+                             '#MB_START { color:#3e533e; background:#9dd09d }' +
+                             '#MB_STOP { color:#ea2e0f; background:#ea9587 }';
+          document.head.appendChild(styles);
+        };
+
+        MemoryBlocks.prototype.setupStatus = function () {
+          var statusElem = document.createElement( 'div' );
+
+          statusElem.id = 'MB_status';
+          statusElem.className = 'mb_hidden';
+          this.statusElem = statusElem;
+          this.options.root.parentNode.appendChild(statusElem);
+        };
+
+        MemoryBlocks.prototype.addControls = function () {
+          var frag = document.createElement('div'),
+              startBtn = document.createElement( 'button' ),
+              stopBtn = startBtn.cloneNode( false );
+
+          frag.id = 'MB_CONTROLS';
+          startBtn.id = 'MB_START';
+          startBtn.innerHTML = 'Start';
+
+          stopBtn.id = 'MB_STOP';
+          stopBtn.className = 'mb_hidden';
+          stopBtn.innerHTML = 'Stop';
+
+          frag.appendChild( startBtn );
+          frag.appendChild( stopBtn );
+
+          this.options.root.appendChild( frag );
+
+          this.controls = { start: startBtn, stop: stopBtn };
+          var self = this;
+          startBtn.addEventListener( 'click', function () {
+            self.start();
+            this.className = 'mb_hidden';
+            stopBtn.className = '';
+          }, false );
+
+          stopBtn.addEventListener( 'click', function () {
+            self.stop();
+            this.className = 'mb_hidden';
+            startBtn.className = '';
+          }, false );
+        };
+
         MemoryBlocks.prototype.setupSprites = function () {
           var sprite = document.createElement( 'canvas' ),
               ctx = sprite.getContext( '2d' ),
               size = this.options.blockSize,
               gradientActive, gradientInactive,
               itemsInSprite = 3, space = 10,
-              opts = this.options,
+              opts = this.options, deg = Math.PI/180,
               createGradient = function ( color1, color2 ) {
                 var g = ( size * 50 / size ),
-                    gradient = ctx.createRadialGradient( g, g, size/2, g, g, size);
+                    gradient = ctx.createRadialGradient( g, g, size/2, g, g, size );
 
-                gradient.addColorStop(0, color1);
-                gradient.addColorStop(1, color2);
+                gradient.addColorStop( 0, color1 );
+                gradient.addColorStop( 1, color2 );
 
                 return gradient;
               },
@@ -109,40 +169,40 @@
                 ctx.fillRect( 0, 0, size, size );
 
                 ctx.restore();
-              };
+              }, step = size + 10;
 
           sprite.width = ( size + space ) * 3;
           sprite.height = size;
-          sprite.style.cssText = 'position: absolute; top: 0; right: 0; display: noe';
+          sprite.id = 'MB_SPRITES';
 
           setBoxSprite( 0, 0, createGradient( '#f0262a', '#aa1a1e' ) );
-          setBoxSprite( size+10, 0, createGradient( '#e7e7e7', '#a1a1a1' ) );
+          setBoxSprite( step, 0, createGradient( '#e7e7e7', '#a1a1a1' ) );
 
-          var tdata = ctx.getImageData( size+10, 0, size, size );
-          ctx.putImageData( tdata, (size+10)*2, 0);
+          var tdata = ctx.getImageData( step, 0, size, size );
+          ctx.putImageData( tdata, step * 2, 0 );
 
           ctx.save();
-          ctx.translate( (size+10)*2+ size/6, size/10 );
-          ctx.rotate(45*(Math.PI/180));
+          ctx.translate( step * 2 + size / 6, size / 10 );
+          ctx.rotate( 45 * deg );
           ctx.moveTo( 0, 0 );
           ctx.fillStyle = createGradient( '#f0262a', '#aa1a1e' )
-          ctx.fillRect( 0, 0, size, size/10 );
+          ctx.fillRect( 0, 0, size, size / 10 );
           ctx.restore()
 
           ctx.save();
-          ctx.translate( (size+10)*2+ size/8, size/1.25 );
-          ctx.rotate(-45*(Math.PI/180));
+          ctx.translate( step * 2 + size / 8, size / 1.25 );
+          ctx.rotate( -45 * deg );
           ctx.fillStyle = createGradient( '#f0262a', '#aa1a1e' );
-          ctx.fillRect( 0, 0, size, size/10 );
+          ctx.fillRect( 0, 0, size, size / 10 );
           ctx.restore();
 
-          body.appendChild(sprite);
+          body.appendChild( sprite );
           this.sprite = ctx;
         };
 
         MemoryBlocks.prototype.calculateMetrics = function () {
           var opts = this.options,
-              gridRatio = opts.gridRatio.split(':'),
+              gridRatio = opts.gridRatio.split( ':' ),
               size = opts.blockSize,
               metrics = {},
               space = size/50,
@@ -167,10 +227,13 @@
           board.width = metrics.width;
           board.height = metrics.height;
 
-          opts.root.appendChild(board);
+          opts.root.appendChild( board );
 
           this.context = board.getContext( '2d' );
+          this.loadStyles();
+          this.setupStatus();
           this.setupSprites();
+          this.addControls();
 
           var x = 0, y = 0, m = metrics.col, o = metrics.row, n,
               blocks = {}, i = 0;
@@ -179,8 +242,8 @@
             n = m;
             x = 0;
             while ( n-- ) {
-              this.drawBlock(x, y);
-              blocks['' + (x/size).toFixed(0) + (y/size).toFixed(0)] = [x,y];
+              this.drawBlock( x, y );
+              blocks['' + ( x / size ).toFixed( 0 ) + ( y / size ).toFixed( 0 )] = [ x, y ];
 
               x = x + metrics.sizeFactor;
             }
@@ -189,9 +252,19 @@
           this.blocks = blocks;
         };
 
+        MemoryBlocks.prototype.setStatus = function ( msg, type ) {
+          var statusElem = this.statusElem;
+          statusElem.textContent = msg || '';
+          statusElem.className = type || 'info';
+
+          setTimeout( function () {
+            statusElem.className = 'mb_hidden';
+          }, 5000 )
+        };
+
         MemoryBlocks.prototype.drawBlock = function ( x, y ) {
           var size = this.options.blockSize,
-              data = this.sprite.getImageData( size+10, 0, size, size ),
+              data = this.sprite.getImageData( size + 10, 0, size, size ),
               ctx = this.context;
 
           ctx.putImageData( data, x, y );
@@ -207,7 +280,7 @@
 
         MemoryBlocks.prototype.wrongBlock = function ( x, y ) {
           var size = this.options.blockSize,
-              data = this.sprite.getImageData( (size+10)*2, 0, size, size ),
+              data = this.sprite.getImageData( ( size + 10 ) * 2, 0, size, size ),
               ctx = this.context;
 
           ctx.putImageData( data, x, y );
@@ -218,34 +291,34 @@
               board = self.context.canvas,
               size = self.options.blockSize,
               oX = board.offsetLeft,
-              oY = board.offsetTop;
+              oY = board.offsetTop,
+              controls = this.controls;
 
-          board.addEventListener('click', function (e) {
+          board.addEventListener( 'click', function ( e ) {
             e = e || event;
             var x = e.clientX - oX,
                 y = e.clientY - oY;
 
-            if (typeof self.possibleClicks == 'undefined') {
+            if ( typeof self.possibleClicks == 'undefined' ) {
               return;
-            } else if (self.possibleClicks--) {
-              var sX = Math.abs(Math.floor(x/(size+(size/50)))),
-                  sY = Math.abs(Math.floor(y/(size+(size/50)))),
+            } else if ( self.possibleClicks-- ) {
+              var sX = Math.abs( Math.floor( x / ( size + ( size / 50 ) ) ) ),
+                  sY = Math.abs( Math.floor( y / ( size + ( size / 50 ) ) ) ),
                   xy = '' + sX + sY,
                   coord = self.blocks[ xy ];
-              if (coord && self.active.indexOf(xy) != -1) {
-                self.markBlock(coord[0], coord[1]);
+              if ( coord && self.active.indexOf( xy ) != -1 ) {
+                self.markBlock( coord[0], coord[1] );
 
-                if (self.possibleClicks == 0) {
-                  alert('Congratulations!');
-                  self.clear();
+                if ( self.possibleClicks == 0 ) {
+                  self.setStatus( 'Congratulations!', 'gamecomplete' );
                 }
                 return;
               } else {
-                self.wrongBlock(coord[0], coord[1]);
+                self.wrongBlock( coord[0], coord[1] );
               }
             }
 
-            alert("GAME OVER");
+            self.setStatus( 'GAME OVER', 'gameover' );
             self.unbind();
           }, false);
         };
@@ -262,12 +335,12 @@
               col = metrics.col,
               row = metrics.row, r;
 
-          while (col--) {
+          while ( col-- ) {
             r = row;
-            while (r--) {
-              coord = block[col + '' + r];
+            while ( r-- ) {
+              coord = block[ col + '' + r ];
 
-              this.drawBlock(coord[0], coord[1]);
+              this.drawBlock( coord[0], coord[1] );
             }
           }
         };
@@ -280,25 +353,25 @@
               maxX = metrics.col-1,
               maxY = metrics.row-1,
               n = maxX * maxY,
-              h = Math.floor(n/2),
-              maxP = Math.floor(Math.random() * n),
+              h = Math.floor( n/2 ),
+              maxP = Math.floor( Math.random() * n ),
               tX, tY, f,
               coord, self = this;
           this.active = [];
           this.clear();
-          if (maxP < h) {
+          if ( maxP < h ) {
             maxP = h;
           }
 
-          while (maxP--) {
-            tX = Math.floor(Math.random() * (maxX));
-            tY = Math.floor(Math.random() * (maxY));
+          while ( maxP-- ) {
+            tX = Math.floor( Math.random() * maxX );
+            tY = Math.floor( Math.random() * maxY );
             f = tX + '' + tY;
 
-            if (this.active.indexOf(f) == -1) {
-              this.active.push(f);
-              coord = blocks[f];
-              this.markBlock(coord[0], coord[1]);
+            if ( this.active.indexOf( f ) == -1 ) {
+              this.active.push( f );
+              coord = blocks[ f ];
+              this.markBlock( coord[0], coord[1] );
             }
           }
 
@@ -308,16 +381,16 @@
             self.possibleClicks = self.active.length;
             self.bind();
 
-          }, opt.timeout*1000);
+          }, opt.timeout*1000 );
         };
 
         MemoryBlocks.prototype.stop = function () {
-          clearTimeout(this.timer);
+          clearTimeout( this.timer );
           this.unbind();
           this.clear();
         };
 
-        this.mb = new MemoryBlocks({ root: root, blockSize: 50, timeout: 5 });
+        this.mb = new MemoryBlocks({ root: root, blockSize: 50, maxLevel: 5, timeout: 5 });
       }(window, document, Math));
     </script>
   </body>
