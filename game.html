@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2c
+          @version 0.2d
       */
 
       (function ( window, document, Math ) {
@@ -287,40 +287,44 @@
               size = self.options.blockSize,
               oX = board.offsetLeft,
               oY = board.offsetTop,
-              controls = this.controls;
+              controls = this.controls,
+              handleClick = function ( e ) {
+                e = e || event;
+                var x = e.clientX - oX,
+                    y = e.clientY - oY;
 
-          board.addEventListener( 'click', function ( e ) {
-            e = e || event;
-            var x = e.clientX - oX,
-                y = e.clientY - oY;
+                if ( typeof self.possibleClicks == 'undefined' ) {
+                  return;
+                } else if ( self.possibleClicks-- ) {
+                  var sX = Math.abs( Math.floor( x / ( size + ( size / 50 ) ) ) ),
+                      sY = Math.abs( Math.floor( y / ( size + ( size / 50 ) ) ) ),
+                      xy = '' + sX + sY,
+                      coord = self.blocks[ xy ];
+                  if ( coord && self.active.indexOf( xy ) != -1 ) {
+                    self.drawBlock( coord[0], coord[1], 'select' );
 
-            if ( typeof self.possibleClicks == 'undefined' ) {
-              return;
-            } else if ( self.possibleClicks-- ) {
-              var sX = Math.abs( Math.floor( x / ( size + ( size / 50 ) ) ) ),
-                  sY = Math.abs( Math.floor( y / ( size + ( size / 50 ) ) ) ),
-                  xy = '' + sX + sY,
-                  coord = self.blocks[ xy ];
-              if ( coord && self.active.indexOf( xy ) != -1 ) {
-                self.drawBlock( coord[0], coord[1], 'select' );
-
-                if ( self.possibleClicks == 0 ) {
-                  self.setStatus( 'Congratulations!', 'gamecomplete' );
+                    if ( self.possibleClicks == 0 ) {
+                      self.setStatus( 'Congratulations!', 'gamecomplete' );
+                    }
+                    return;
+                  } else {
+                    self.drawBlock( coord[0], coord[1], 'invalid' );
+                  }
                 }
-                return;
-              } else {
-                self.drawBlock( coord[0], coord[1], 'invalid' );
-              }
-            }
 
-            self.setStatus( 'GAME OVER', 'gameover' );
-            self.unbind();
-          }, false);
+                self.setStatus( 'GAME OVER', 'gameover' );
+                self.unbind();
+              };
+
+          this.handleClick = handleClick.bind(this);
+
+          board.addEventListener( 'click', this.handleClick, false);
         };
 
         MemoryBlocks.prototype.unbind = function () {
           this.active = [];
           delete this.possibleClicks;
+          this.context.canvas.removeEventListener( 'click', this.handleClick, false);
         };
 
         MemoryBlocks.prototype.clear = function () {
