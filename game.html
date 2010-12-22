@@ -16,31 +16,34 @@
       html, body, div, h3 { margin:0; padding:0 }
       html, body { height:100%; overflow:hidden }
       body { z-index:10; position:relative }
-      #board { margin:10px; border:1px solid #eee; overflow:hidden }
+      #board { margin:10px; overflow:hidden; text-align:center }
+      #board canvas { margin:0 auto }
       h3 { font-family: 'Arvo', arial, serif; font-size:24px; text-align:center; margin:10px 0 }
     </style>
     <meta name="author" content="Livingston Samuel" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
   </head>
   <body>
-    <h3>Memory Block</h3>
+    <h3>Memory Blocks</h3>
     <div id='board'></div>
     <!-- fork me at https://github.com/livingston/ -->
+
     <script>
+      /*! Memory Blocks
+
+          @author Livingston Samuel
+          @version 0.2
+      */
+
       (function ( window, document, Math ) {
         var body = document.body,
             root = document.getElementById( 'board' ),
-            boardElem = document.createElement( 'canvas' ),
             MemoryBlocks, Extend;
 
-        if ( !boardElem ) {
+        if ( !document.createElement('canvas') ) {
           body.appendChild( document.createTextNode( 'Your browser doesn\'t support canvas.' ) );
           return
         }
-
-        boardElem.width = body.clientWidth;
-        boardElem.height = ( body.clientHeight - root.offsetTop - 30 );
-        root.appendChild( boardElem );
 
         Extend = function ( what, wit ) {
           var ext = {}, name, t;
@@ -63,20 +66,258 @@
           return ext
         };
 
-        MemoryBlocks = function (options) {
+        MemoryBlocks = function ( options ) {
           var defaults = {
             board: null,
+            root: document.body,
             timeout: 60,
-            minLevel: 0,
-            maxLevel: 0
+            minLevel: 3,
+            maxLevel: 10,
+            blockSize: 100,
+            gridRatio: '1:1'
           },
-          options = Extend(defaults, options);
+          options = Extend( defaults, options );
 
-          this.context = options.board.getContext('2d');
           this.options = options;
+
+          this.calculateMetrics();
+          this.setup();
         };
 
-        this.mb = new MemoryBlocks({ board: boardElem });
+        MemoryBlocks.prototype.setupSprites = function () {
+          var sprite = document.createElement( 'canvas' ),
+              ctx = sprite.getContext( '2d' ),
+              size = this.options.blockSize,
+              gradientActive, gradientInactive,
+              itemsInSprite = 3, space = 10,
+              opts = this.options,
+              createGradient = function ( color1, color2 ) {
+                var g = ( size * 50 / size ),
+                    gradient = ctx.createRadialGradient( g, g, size/2, g, g, size);
+
+                gradient.addColorStop(0, color1);
+                gradient.addColorStop(1, color2);
+
+                return gradient;
+              },
+              setBoxSprite = function ( x, y, style ) {
+                ctx.save();
+                ctx.translate( x, y );
+
+                ctx.moveTo( 0, 0 );
+                ctx.fillStyle = style;
+                ctx.fillRect( 0, 0, size, size );
+
+                ctx.restore();
+              };
+
+          sprite.width = ( size + space ) * 3;
+          sprite.height = size;
+          sprite.style.cssText = 'position: absolute; top: 0; right: 0; display: noe';
+
+          setBoxSprite( 0, 0, createGradient( '#f0262a', '#aa1a1e' ) );
+          setBoxSprite( size+10, 0, createGradient( '#e7e7e7', '#a1a1a1' ) );
+
+          var tdata = ctx.getImageData( size+10, 0, size, size );
+          ctx.putImageData( tdata, (size+10)*2, 0);
+
+          ctx.save();
+          ctx.translate( (size+10)*2+ size/6, size/10 );
+          ctx.rotate(45*(Math.PI/180));
+          ctx.moveTo( 0, 0 );
+          ctx.fillStyle = createGradient( '#f0262a', '#aa1a1e' )
+          ctx.fillRect( 0, 0, size, size/10 );
+          ctx.restore()
+
+          ctx.save();
+          ctx.translate( (size+10)*2+ size/8, size/1.25 );
+          ctx.rotate(-45*(Math.PI/180));
+          ctx.fillStyle = createGradient( '#f0262a', '#aa1a1e' );
+          ctx.fillRect( 0, 0, size, size/10 );
+          ctx.restore();
+
+          body.appendChild(sprite);
+          this.sprite = ctx;
+        };
+
+        MemoryBlocks.prototype.calculateMetrics = function () {
+          var opts = this.options,
+              gridRatio = opts.gridRatio.split(':'),
+              size = opts.blockSize,
+              metrics = {},
+              space = size/50,
+              sizeFactor = ( size + space );
+
+          metrics.col = opts.maxLevel * parseInt( gridRatio[ 0 ], 10 );
+          metrics.row = opts.maxLevel * parseInt( gridRatio[ 1 ], 10 );
+          metrics.space = space;
+          metrics.sizeFactor = sizeFactor;
+          metrics.width = sizeFactor * metrics.col;
+          metrics.height = sizeFactor * metrics.row;
+
+          this.metrics = metrics;
+        };
+
+        MemoryBlocks.prototype.setup = function () {
+          var board = document.createElement( 'canvas' ),
+              metrics = this.metrics,
+              opts = this.options,
+              size = opts.blockSize;
+
+          board.width = metrics.width;
+          board.height = metrics.height;
+
+          opts.root.appendChild(board);
+
+          this.context = board.getContext( '2d' );
+          this.setupSprites();
+
+          var x = 0, y = 0, m = metrics.col, o = metrics.row, n,
+              blocks = {}, i = 0;
+
+          while ( o-- ) {
+            n = m;
+            x = 0;
+            while ( n-- ) {
+              this.drawBlock(x, y);
+              blocks['' + (x/size).toFixed(0) + (y/size).toFixed(0)] = [x,y];
+
+              x = x + metrics.sizeFactor;
+            }
+            y = y + metrics.sizeFactor;
+          }
+          this.blocks = blocks;
+        };
+
+        MemoryBlocks.prototype.drawBlock = function ( x, y ) {
+          var size = this.options.blockSize,
+              data = this.sprite.getImageData( size+10, 0, size, size ),
+              ctx = this.context;
+
+          ctx.putImageData( data, x, y );
+        };
+
+        MemoryBlocks.prototype.markBlock = function ( x, y ) {
+          var size = this.options.blockSize,
+              data = this.sprite.getImageData( 0, 0, size, size ),
+              ctx = this.context;
+
+          ctx.putImageData( data, x, y );
+        };
+
+        MemoryBlocks.prototype.wrongBlock = function ( x, y ) {
+          var size = this.options.blockSize,
+              data = this.sprite.getImageData( (size+10)*2, 0, size, size ),
+              ctx = this.context;
+
+          ctx.putImageData( data, x, y );
+        };
+
+        MemoryBlocks.prototype.bind = function () {
+          var self = this,
+              board = self.context.canvas,
+              size = self.options.blockSize,
+              oX = board.offsetLeft,
+              oY = board.offsetTop;
+
+          board.addEventListener('click', function (e) {
+            e = e || event;
+            var x = e.clientX - oX,
+                y = e.clientY - oY;
+
+            if (typeof self.possibleClicks == 'undefined') {
+              return;
+            } else if (self.possibleClicks--) {
+              var sX = Math.abs(Math.floor(x/(size+(size/50)))),
+                  sY = Math.abs(Math.floor(y/(size+(size/50)))),
+                  xy = '' + sX + sY,
+                  coord = self.blocks[ xy ];
+              if (coord && self.active.indexOf(xy) != -1) {
+                self.markBlock(coord[0], coord[1]);
+
+                if (self.possibleClicks == 0) {
+                  alert('Congratulations!');
+                  self.clear();
+                }
+                return;
+              } else {
+                self.wrongBlock(coord[0], coord[1]);
+              }
+            }
+
+            alert("GAME OVER");
+            self.unbind();
+          }, false);
+        };
+
+        MemoryBlocks.prototype.unbind = function () {
+          this.active = [];
+          delete this.possibleClicks;
+        };
+
+        MemoryBlocks.prototype.clear = function () {
+          var block = this.blocks, coord,
+              opt = this.options,
+              metrics = this.metrics,
+              col = metrics.col,
+              row = metrics.row, r;
+
+          while (col--) {
+            r = row;
+            while (r--) {
+              coord = block[col + '' + r];
+
+              this.drawBlock(coord[0], coord[1]);
+            }
+          }
+        };
+
+        MemoryBlocks.prototype.start = function () {
+          var blocks = this.blocks,
+              opt = this.options,
+              size = opt.blockSize,
+              metrics = this.metrics,
+              maxX = metrics.col-1,
+              maxY = metrics.row-1,
+              n = maxX * maxY,
+              h = Math.floor(n/2),
+              maxP = Math.floor(Math.random() * n),
+              tX, tY, f,
+              coord, self = this;
+          this.active = [];
+          this.clear();
+          if (maxP < h) {
+            maxP = h;
+          }
+
+          while (maxP--) {
+            tX = Math.floor(Math.random() * (maxX));
+            tY = Math.floor(Math.random() * (maxY));
+            f = tX + '' + tY;
+
+            if (this.active.indexOf(f) == -1) {
+              this.active.push(f);
+              coord = blocks[f];
+              this.markBlock(coord[0], coord[1]);
+            }
+          }
+
+          this.timer = setTimeout( function () {
+            self.clear();
+
+            self.possibleClicks = self.active.length;
+            self.bind();
+
+          }, opt.timeout*1000);
+        };
+
+        MemoryBlocks.prototype.stop = function () {
+          clearTimeout(this.timer);
+          this.unbind();
+          this.clear();
+        };
+
+        this.mb = new MemoryBlocks({ root: root, blockSize: 50, timeout: 5 });
       }(window, document, Math));
     </script>
   </body>
