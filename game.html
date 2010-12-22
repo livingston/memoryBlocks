@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2f
+          @version 0.2g
       */
 
       (function ( window, document, Math ) {
@@ -351,8 +351,8 @@
               opt = this.options,
               size = opt.blockSize,
               metrics = this.metrics,
-              maxX = metrics.col-1,
-              maxY = metrics.row-1,
+              maxX = metrics.col,
+              maxY = metrics.row,
               n = maxX * maxY,
               h = Math.floor( n/2 ),
               maxP = Math.floor( Math.random() * n ),
@@ -360,7 +360,8 @@
               coord, self = this;
           this.active = [];
           this.clear();
-          if ( maxP < h ) {
+
+          if ( maxP < h || maxP > n/3 ) {
             maxP = h;
           }
 
