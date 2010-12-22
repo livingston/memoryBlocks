@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2d
+          @version 0.2e
       */
 
       (function ( window, document, Math ) {
@@ -99,7 +99,7 @@
                              '#MB_CONTROLS button { padding:10px 20px 8px; border:1px solid; border-radius:10px; font-size:16px; margin:7px; font-weight:bold; text-transform:uppercase }' +
                              '#MB_START { color:#3e533e; background:#9dd09d }' +
                              '#MB_STOP { color:#ea2e0f; background:#ea9587 }';
-          document.head.appendChild(styles);
+          this.options.root.appendChild(styles);
         };
 
         MemoryBlocks.prototype.setupStatus = function () {
