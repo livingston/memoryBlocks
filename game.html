@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2b
+          @version 0.2c
       */
 
       (function ( window, document, Math ) {
@@ -262,28 +262,23 @@
           }, 5000 )
         };
 
-        MemoryBlocks.prototype.drawBlock = function ( x, y ) {
-          var size = this.options.blockSize,
-              data = this.sprite.getImageData( size + 10, 0, size, size ),
-              ctx = this.context;
+        MemoryBlocks.prototype.drawBlock = function ( x, y, type ) {
+          var self = this,
+              size = self.options.blockSize,
+              ctx = self.context,
+              getData = {
+                blank: function () {
+                  return self.sprite.getImageData( size + 10, 0, size, size )
+                },
+                select: function () {
+                  return self.sprite.getImageData( 0, 0, size, size )
+                },
+                invalid: function () {
+                  return self.sprite.getImageData( ( size + 10 ) * 2, 0, size, size )
+                }
+              };
 
-          ctx.putImageData( data, x, y );
-        };
-
-        MemoryBlocks.prototype.markBlock = function ( x, y ) {
-          var size = this.options.blockSize,
-              data = this.sprite.getImageData( 0, 0, size, size ),
-              ctx = this.context;
-
-          ctx.putImageData( data, x, y );
-        };
-
-        MemoryBlocks.prototype.wrongBlock = function ( x, y ) {
-          var size = this.options.blockSize,
-              data = this.sprite.getImageData( ( size + 10 ) * 2, 0, size, size ),
-              ctx = this.context;
-
-          ctx.putImageData( data, x, y );
+          ctx.putImageData( getData[ type || 'blank' ](), x, y )
         };
 
         MemoryBlocks.prototype.bind = function () {
@@ -307,14 +302,14 @@
                   xy = '' + sX + sY,
                   coord = self.blocks[ xy ];
               if ( coord && self.active.indexOf( xy ) != -1 ) {
-                self.markBlock( coord[0], coord[1] );
+                self.drawBlock( coord[0], coord[1], 'select' );
 
                 if ( self.possibleClicks == 0 ) {
                   self.setStatus( 'Congratulations!', 'gamecomplete' );
                 }
                 return;
               } else {
-                self.wrongBlock( coord[0], coord[1] );
+                self.drawBlock( coord[0], coord[1], 'invalid' );
               }
             }
 
@@ -371,7 +366,7 @@
             if ( this.active.indexOf( f ) == -1 ) {
               this.active.push( f );
               coord = blocks[ f ];
-              this.markBlock( coord[0], coord[1] );
+              this.drawBlock( coord[0], coord[1], 'select' );
             }
           }
 
