@@ -32,13 +32,13 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.2g
+          @version 0.3
       */
 
       (function ( window, document, Math ) {
         var body = document.body,
             root = document.getElementById( 'board' ),
-            MemoryBlocks, Extend;
+            MemoryBlocks, Extend, LevelManager;
 
         if ( !document.createElement('canvas').getContext ) {
           body.appendChild( document.createTextNode( 'Your browser doesn\'t support canvas.' ) );
@@ -64,6 +64,49 @@
           }
 
           return ext
+        };
+
+        LevelManager = function ( settings ) {
+          var defaultSettings = {
+            
+          };
+          this.settings = Extend( defaultSettings, settings || {} );
+        };
+
+        LevelManager.prototype.setup = function () {
+          
+        };
+
+        LevelManager.prototype.start = function () {
+          
+        };
+
+        LevelManager.prototype.end = function () {
+          
+        };
+
+        LevelManager.prototype.nextLevel = function () {
+          
+        };
+
+        LevelManager.prototype.prevLevel = function () {
+          
+        };
+
+        LevelManager.prototype.restartLevel = function () {
+          
+        };
+
+        LevelManager.prototype.endLevel = function () {
+          
+        };
+
+        LevelManager.prototype.levelInfo = function () {
+          
+        };
+
+        LevelManager.prototype.results = function () {
+          
         };
 
         MemoryBlocks = function ( options ) {
