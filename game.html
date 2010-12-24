@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.3
+          @version 0.3a
       */
 
       (function ( window, document, Math ) {
@@ -71,22 +71,29 @@
             
           };
           this.settings = Extend( defaultSettings, settings || {} );
+          this.setup();
         };
 
         LevelManager.prototype.setup = function () {
-          
+          this.currentLevel = 0;
         };
 
         LevelManager.prototype.start = function () {
-          
+          this.settings.levelStart( this );
         };
 
-        LevelManager.prototype.end = function () {
-          
+        LevelManager.prototype.end = function ( status ) {
+          this.settings.end( status );
+          this.currentLevel = 0;
         };
 
         LevelManager.prototype.nextLevel = function () {
-          
+          if (++this.currentLevel < this.settings.max) {
+            this.start();
+          } else {
+            this.currentLevel--;
+            this.end( true );
+          }
         };
 
         LevelManager.prototype.prevLevel = function () {
@@ -171,10 +178,10 @@
 
           this.options.root.appendChild( frag );
 
-          this.controls = { start: startBtn, stop: stopBtn };
+          this.controls = { start: startBtn, stop: stopBtn, holder: frag };
           var self = this;
           startBtn.addEventListener( 'click', function () {
-            self.start();
+            self.levels.start();
             this.className = 'mb_hidden';
             stopBtn.className = '';
           }, false );
@@ -246,30 +253,36 @@
           var opts = this.options,
               gridRatio = opts.gridRatio.split( ':' ),
               size = opts.blockSize,
-              metrics = {},
-              space = size/50,
-              sizeFactor = ( size + space );
+              minLevel = opts.minLevel,
+              maxLevel = opts.maxLevel,
+              levelLen = maxLevel - minLevel + 1,
+              space = size / 50, t = maxLevel, level,
+              sizeFactor = ( size + space ),
+              levels = {
+                length: levelLen,
+                space: space,
+                sizeFactor: sizeFactor
+              };
 
-          metrics.col = opts.maxLevel * parseInt( gridRatio[ 0 ], 10 );
-          metrics.row = opts.maxLevel * parseInt( gridRatio[ 1 ], 10 );
-          metrics.space = space;
-          metrics.sizeFactor = sizeFactor;
-          metrics.width = sizeFactor * metrics.col;
-          metrics.height = sizeFactor * metrics.row;
+          while ( levelLen-- ) {
+            level = {};
+            level.col = t * parseInt( gridRatio[ 0 ], 10 );
+            level.row = t * parseInt( gridRatio[ 1 ], 10 );
+            level.width = sizeFactor * level.col;
+            level.height = sizeFactor * level.row;
+            levels[levelLen] = level;
+            t--;
+          }
 
-          this.metrics = metrics;
+          this.metrics = levels;
         };
 
         MemoryBlocks.prototype.setup = function () {
           var board = document.createElement( 'canvas' ),
-              metrics = this.metrics,
-              opts = this.options,
-              size = opts.blockSize;
-
-          board.width = metrics.width;
-          board.height = metrics.height;
+              opts = this.options;
 
           opts.root.appendChild( board );
+          this.board = board;
 
           this.context = board.getContext( '2d' );
           this.loadStyles();
@@ -277,8 +290,29 @@
           this.setupSprites();
           this.addControls();
 
-          var x = 0, y = 0, m = metrics.col, o = metrics.row, n,
+          this.levels = new LevelManager( { holder: this.controls.holder, max: this.metrics.length, levelStart: this.setupBoard.bind( this ), end: this.end.bind(this) } );
+        };
+
+        MemoryBlocks.prototype.setStatus = function ( msg, type ) {
+          var statusElem = this.statusElem;
+          statusElem.textContent = msg || '';
+          statusElem.className = type || 'info';
+
+          setTimeout( function () {
+            statusElem.className = 'mb_hidden';
+          }, 5000 )
+        };
+
+        MemoryBlocks.prototype.setupBoard = function (levels) {
+          var metrics = this.metrics,
+              levelMetrics = metrics[ levels.currentLevel ],
+              board = this.board,
+              size = this.options.blockSize,
+              x = 0, y = 0, m = levelMetrics.col, o = levelMetrics.row, n,
               blocks = {}, i = 0, ty, sizeFactor = metrics.sizeFactor;
+
+          board.width = levelMetrics.width;
+          board.height = levelMetrics.height;
 
           while ( o-- ) {
             n = m;
@@ -293,16 +327,8 @@
             y = y + sizeFactor;
           }
           this.blocks = blocks;
-        };
 
-        MemoryBlocks.prototype.setStatus = function ( msg, type ) {
-          var statusElem = this.statusElem;
-          statusElem.textContent = msg || '';
-          statusElem.className = type || 'info';
-
-          setTimeout( function () {
-            statusElem.className = 'mb_hidden';
-          }, 5000 )
+          this.start();
         };
 
         MemoryBlocks.prototype.drawBlock = function ( x, y, type ) {
@@ -334,21 +360,22 @@
               sizeFactor = self.metrics.sizeFactor,
               handleClick = function ( e ) {
                 e = e || event;
-                var x = e.clientX - oX,
-                    y = e.clientY - oY;
+                var sX, sY, xy, coord;
 
                 if ( typeof self.possibleClicks == 'undefined' ) {
                   return;
                 } else if ( self.possibleClicks-- ) {
-                  var sX = Math.abs( Math.floor( x / sizeFactor ) ),
-                      sY = Math.abs( Math.floor( y / sizeFactor ) ),
-                      xy = '' + sX + sY,
-                      coord = self.blocks[ xy ];
+                  sX = Math.abs( Math.floor( ( e.clientX - oX ) / sizeFactor ) );
+                  sY = Math.abs( Math.floor( ( e.clientY - oY ) / sizeFactor ) );
+                  xy = '' + sX + sY;
+                  coord = self.blocks[ xy ];
+
                   if ( self.active.indexOf( xy ) != -1 ) {
                     self.drawBlock( coord[0], coord[1], 'select' );
 
                     if ( self.possibleClicks == 0 ) {
-                      self.setStatus( 'Congratulations!', 'gamecomplete' );
+                      self.unbind();
+                      self.levels.nextLevel();
                     }
                     return;
                   } else {
@@ -368,6 +395,7 @@
         MemoryBlocks.prototype.unbind = function () {
           this.active = [];
           delete this.possibleClicks;
+
           this.context.canvas.removeEventListener( 'click', this.handleClick, false);
         };
 
@@ -375,9 +403,10 @@
           var block = this.blocks, coord,
               opt = this.options,
               metrics = this.metrics,
-              col = metrics.col,
-              row = metrics.row, r, tc;
-
+              levelMetrics = metrics[ this.levels.currentLevel ],
+              col = levelMetrics.col,
+              row = levelMetrics.row, r, tc;
+console.log ( this.levels.currentLevel, levelMetrics )
           while ( col-- ) {
             r = row;
             tc = col + '';
@@ -394,15 +423,15 @@
               opt = this.options,
               size = opt.blockSize,
               metrics = this.metrics,
-              maxX = metrics.col,
-              maxY = metrics.row,
+              levelMetrics = metrics[ this.levels.currentLevel ],
+              maxX = levelMetrics.col,
+              maxY = levelMetrics.row,
               n = maxX * maxY,
               h = Math.floor( n/2 ),
               maxP = Math.floor( Math.random() * n ),
               tX, tY, f,
               coord, self = this;
           this.active = [];
-          this.clear();
 
           if ( maxP < h || maxP > n/3 ) {
             maxP = h;
@@ -429,8 +458,18 @@
           }, opt.timeout*1000 );
         };
 
+        MemoryBlocks.prototype.end = function (success) {
+          if ( success ) {
+            this.setStatus( 'Congratulations!', 'gamecomplete' );
+          } else {
+            this.setStatus( 'GAME OVER', 'gameover' );
+          }
+          this.clear();
+        };
+
         MemoryBlocks.prototype.stop = function () {
           clearTimeout( this.timer );
+          this.levels.end();
           this.unbind();
           this.clear();
         };
