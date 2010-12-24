@@ -40,8 +40,8 @@
             root = document.getElementById( 'board' ),
             MemoryBlocks, Extend, LevelManager;
 
-        if ( !document.createElement('canvas').getContext ) {
-          body.appendChild( document.createTextNode( 'Your browser doesn\'t support canvas.' ) );
+        if ( !document.createElement('canvas').getContext || !Function.bind ) {
+          body.appendChild( document.createTextNode( 'Your browser doesn\'t support "Memory Blocks".' ) );
           return
         }
 
