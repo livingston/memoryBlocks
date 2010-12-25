@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.3b
+          @version 0.3c
       */
 
       (function ( window, document, Math ) {
@@ -41,6 +41,7 @@
             MemoryBlocks, Extend, LevelManager;
 
         if ( !document.createElement('canvas').getContext || !Function.bind ) {
+          body.style.cssText = 'text-align:center';
           body.appendChild( document.createTextNode( 'Your browser doesn\'t support "Memory Blocks".' ) );
           return
         }
@@ -347,22 +348,15 @@
           var self = this,
               size = self.options.blockSize,
               ctx = self.context,
-              getData = {
-                blank: function () {
-                  return self.sprite.getImageData( size + 10, 0, size, size )
-                },
-                select: function () {
-                  return self.sprite.getImageData( 0, 0, size, size )
-                },
-                invalid: function () {
-                  return self.sprite.getImageData( ( size + 10 ) * 2, 0, size, size )
-                },
-                hint: function () {
-                  return self.sprite.getImageData( ( size + 10 ) * 3, 0, size, size )
-                }
+              sprite = self.sprite,
+              getSprite = {
+                blank: sprite.getImageData( size + 10, 0, size, size ),
+                select: sprite.getImageData( 0, 0, size, size ),
+                invalid: sprite.getImageData( ( size + 10 ) * 2, 0, size, size ),
+                hint: sprite.getImageData( ( size + 10 ) * 3, 0, size, size )
               };
 
-          ctx.putImageData( getData[ type || 'blank' ](), x, y )
+          ctx.putImageData( getSprite[ type || 'blank' ], x, y )
         };
 
         MemoryBlocks.prototype.bind = function () {
@@ -513,7 +507,7 @@
 
           controls.stop.className = 'mb_hidden';
           controls.start.className = '';
-          this.clear();
+          this.setupBoard();
         };
 
         MemoryBlocks.prototype.stop = function () {
