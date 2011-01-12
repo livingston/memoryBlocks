@@ -32,11 +32,13 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.4
+          @version 0.5
       */
 
       (function (window, document, Math) {
         var body = document.body,
+            splice = Array.prototype.splice,
+            drawImage = CanvasRenderingContext2D.prototype.drawImage,
             root = document.getElementById('board'),
             MemoryBlocks, extend, LevelManager;
 
@@ -257,8 +259,7 @@
           ctx.fillRect(0, 0, size, size / 10);
           ctx.restore();
 
-          body.appendChild(sprite);
-          this.sprite = ctx;
+          this.sprite = sprite;
         };
 
         MemoryBlocks.prototype.calculateMetrics = function () {
@@ -347,14 +348,16 @@
               size = self.options.blockSize,
               ctx = self.context,
               sprite = self.sprite,
+              args = [sprite, size, size, x, y, size, size],
               getSprite = {
-                blank: sprite.getImageData(size + 10, 0, size, size),
-                select: sprite.getImageData(0, 0, size, size),
-                invalid: sprite.getImageData((size + 10) * 2, 0, size, size),
-                hint: sprite.getImageData((size + 10) * 3, 0, size, size)
+                blank: [size + 10, 0],
+                select: [0, 0],
+                invalid: [(size + 10) * 2, 0],
+                hint: [(size + 10) * 3, 0]
               };
 
-          ctx.putImageData(getSprite[type || 'blank'], x, y);
+          splice.apply(args, [1, 0].concat(getSprite[type || 'blank']));
+          drawImage.apply(ctx, args);
         };
 
         MemoryBlocks.prototype.bind = function () {
