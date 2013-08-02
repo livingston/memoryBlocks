@@ -26,24 +26,6 @@ define(function (require) {
     this.setup();
   };
 
-  MemoryBlocks.prototype.loadStyles = function () {
-    var styles = document.createElement('style'),
-        canvas = this.context.canvas;
-
-    styles.textContent = '#MB_status { padding:14px 0 13px; text-align:center; position:absolute; top:' +
-                       (canvas.offsetTop + (canvas.height - this.options.blockSize) / 2) +
-                       'px; width:100%; font-size:24px; line-height:1em; border:0 solid; border-width:3px 0 } ' +
-                       '#MB_status.info { background:#eee; color:#999 } ' +
-                       '#MB_status.gamecomplete { background:#9dd09d; color:#007300 } ' +
-                       '#MB_status.gameover { background:#fe381e; color:#8f2011 } ' +
-                       '.mb_hidden { display:none } ' +
-                       '#MB_SPRITES { position:absolute; top:0; right:0; display:none }' +
-                       '#MB_CONTROLS button { padding:10px 20px 8px; border:1px solid; border-radius:10px; font-size:16px; margin:7px; font-weight:bold; text-transform:uppercase }' +
-                       '#MB_START { color:#3e533e; background:#9dd09d }' +
-                       '#MB_STOP { color:#ea2e0f; background:#ea9587 }';
-    this.options.root.appendChild(styles);
-  };
-
   MemoryBlocks.prototype.setupStatus = function () {
     var statusElem = document.createElement('div');
 
@@ -178,7 +160,6 @@ define(function (require) {
     this.board = board;
 
     this.context = board.getContext('2d');
-    this.loadStyles();
     this.setupStatus();
     this.setupSprites();
     this.addControls();
