@@ -15,7 +15,7 @@
     <style>
       html, body, div, h3 { margin:0; padding:0 }
       html, body { height:100%; overflow:hidden }
-      body { z-index:10; position:relative }
+      body { z-index:10; position:relative; background: rgba(0,0,0,.5); }
       #board { margin:10px; overflow:hidden; text-align:center }
       #board canvas { margin:0 auto }
       h3 { font-family: 'Arvo', arial, serif; font-size:24px; text-align:center; margin:10px 0 }
@@ -32,7 +32,7 @@
       /*! Memory Blocks
 
           @author Livingston Samuel
-          @version 0.5
+          @version 0.5.1
       */
 
       (function (window, document, Math) {
@@ -141,6 +141,8 @@
           options = extend(defaults, options);
 
           this.options = options;
+
+          if( options.minLevel > options.maxLevel) throw('Min Level cannot be larger than Max Level');
 
           this.calculateMetrics();
           this.setup();
