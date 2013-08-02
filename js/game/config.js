@@ -6,7 +6,7 @@ define(function () {
   return {
     root: root_el,
     blockSize: 50,
-    minLevel: 2,
+    minLevel: 3,
     maxLevel: 10,
     timeout: 5,
     showHints: true
